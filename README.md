@@ -11,7 +11,7 @@ Solution uses RAG to retrieve specific and precise data and avoid halucination w
 Data is extracted to csv formant to allow further processing.
 
 The following decisions were made in application design
-- each embedding chunk is wole record from input data - it's enough for good quality and cost effective solution
+- each embedding chunk is wole record from input data - it's enough for good quality and cost effective solution (solution is still efficient when invoking llm with param: max_tokens=50)
 - added title, type, age and platform availability into metadata to improve the speed of data filtering
 - used HuggingFace embedding as recommended fine-tuned solution
 - Cohere "command" model is recommended for RAG-oriented tasks
