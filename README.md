@@ -26,5 +26,7 @@ The following decisions were made in application design
 How to use the solution
 1. clone the repository
 2. run pip install
-3. run py load.py to generate embeddings in vector storage (~3-4 hours)
-4. run py extract.py to check two approaches of data extraction
+3. create api hey on Cohere
+4. Add api key to environment variables
+5. run py load.py to generate embeddings in vector storage (~3-4 hours)
+6. run py extract.py to check two approaches of data extraction
