@@ -215,6 +215,64 @@ def load_Imdb3(vector_store):
 
     vector_store.add_documents(documents)
 
+def imdb_ids_data(vector_store):
+    documents = []
+    data = pd.read_csv("data/imdb_ids_data.csv", sep=",", on_bad_lines='skip') 
+    transformed = data.apply(lambda x: { 
+        "page_content": json.dumps(x.to_dict()), 
+        "metadata": {
+            "title": x["primaryTitle"],
+            "imdb_id": x['tconst'],
+            "type": 'Movie',
+        }
+    }, axis=1)
+        
+    result = transformed.tolist()
+
+    # Create documents from the transformed data
+    for item in result:
+        documents.append(Document(page_content=item["page_content"], metadata=item["metadata"]))
+
+    vector_store.add_documents(documents)
+
+def imdb_ids_data2(vector_store):
+    documents = []
+    data = pd.read_csv("data/imdb_ids_data2.csv", sep=",", on_bad_lines='skip') 
+    transformed = data.apply(lambda x: { 
+        "page_content": json.dumps(x.to_dict()), 
+        "metadata": {
+            "title": x["primaryTitle"],
+            "imdb_id": x['tconst'],
+            "type": 'Movie',
+        }
+    }, axis=1)
+        
+    result = transformed.tolist()
+
+    # Create documents from the transformed data
+    for item in result:
+        documents.append(Document(page_content=item["page_content"], metadata=item["metadata"]))
+
+    vector_store.add_documents(documents)
+
+def posters_desc(vector_store):
+    documents = []
+    data = pd.read_csv("data/posters_desc2.csv", sep=";") 
+    transformed = data.apply(lambda x: { 
+        "page_content": json.dumps(x.to_dict()), 
+        "metadata": {
+            "imdb_id": x["imdb_id"],
+        }
+    }, axis=1)
+        
+    result = transformed.tolist()
+
+    # Create documents from the transformed data
+    for item in result:
+        documents.append(Document(page_content=item["page_content"], metadata=item["metadata"]))
+
+    vector_store.add_documents(documents)
+
 
 # Initialize the embedding model
 embedding = HuggingFaceEmbeddings(model_name="all-mpnet-base-v2")
@@ -243,6 +301,12 @@ print('load_Imdb2')
 load_Imdb2(vector_store)
 print('load_Imdb3')
 load_Imdb3(vector_store)
+print('imdb_ids_data')
+imdb_ids_data(vector_store)
+print('imdb_ids_data2')
+imdb_ids_data2(vector_store)
+print('posters_desc')
+posters_desc(vector_store)
 
 
 
