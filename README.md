@@ -7,7 +7,8 @@ This project is a module of larger latforms content - recommendation solution, w
 - above result can be used for next content recommendation or fedback for platform content management team
 
 ## High level view
-![HighLevel](https://github.com/user-attachments/assets/21e0db2c-fbfe-4c11-8cc0-e4b14eacf9eb)
+![HighLevel](https://github.com/user-attachments/assets/bae9866c-57aa-47be-87fa-99851aeeab27)
+
 
 
 Solution contains csv data export from various sources and contain specific platform content and data from imdb. Sum of records is ~30 000.
@@ -17,7 +18,8 @@ Solution uses RAG to retrieve specific and precise data and avoid halucination w
 
 RAG data are retrieved using "Retriever". Retriever is also responsible for decoration of documents with relevant documents, based on "title" and "imdb_id" fields in metadata (if existing). This functionality is not required to be executed using LLM - it saves cost of LLM and enhances security as agents do only what is required
 
-React agent reads this data and checks what is missing in RAG. Missing data are requested using tool (tmdb tool) which calls tmdb API. tmdb API is always requested for newest vote of  amovie, to retrieve up to date data
+React agent reads this data and checks what is missing in RAG. Missing data are requested using tool (tmdb tool) which calls tmdb API. tmdb API is always requested for newest vote of  amovie, to retrieve up to date data.
+Note: this functionality is still in development
 
 All the result is provided to "extract agent" to generate content from all the data available.
 
