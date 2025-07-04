@@ -1,20 +1,16 @@
 from langchain_chroma.vectorstores import Chroma
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_community.llms import Cohere
-from langchain_community.tools import WikipediaQueryRun
-from langchain_community.utilities import WikipediaAPIWrapper
 
-from langchain import hub
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain_openai import OpenAI
-from langchain.agents import AgentExecutor, create_tool_calling_agent, load_tools
-from langchain.prompts import ChatPromptTemplate
+from langgraph.prebuilt import create_react_agent
+from langchain.agents import load_tools
 from langchain_openai import AzureChatOpenAI
 import os
 import logging
 import uuid
-from langchain_openai import AzureChatOpenAI
+from langgraph_supervisor import create_supervisor
+from langchain.tools import tool
+from langgraph.checkpoint.memory import MemorySaver
 
 new_uuid = uuid.uuid4()
 uuid_string = str(new_uuid)
@@ -33,19 +29,15 @@ def extract_titles(query, command, filter = None):
     if filter is not None:
         retriever = vectordb.as_retriever(search_kwargs={"k": 5, "filter": filter})
     else:
-        retriever = vectordb.as_retriever(search_kwargs={"k": 5})
-        
+        retriever = vectordb.as_retriever(search_kwargs={"k": 5})       
 
-    COHERE_API_KEY = os.environ["COHERE_API_KEY"]
-    llm=Cohere(model='command',cohere_api_key=COHERE_API_KEY)
-
-    # documents = query_vector_store(query, retriever)
-    # if documents:
-    #     extraction = extract_llm(documents, llm, command)
-    # else:
-    #     extraction = "No relevant documents found."
-    test_result = agent_llm()
-    return test_result
+    documents = query_vector_store(query, retriever)
+    if documents:
+        enriched_documents = movie_details_agent(documents, command)
+        response = extract_llm(enriched_documents, command)
+    else:
+        return "No relevant documents found."
+    
 
 def query_vector_store(query, retriever):
     print('retriever started')
@@ -54,37 +46,6 @@ def query_vector_store(query, retriever):
     decorate_documents_with_relations(documents)
     logging.info(f"{uuid_string}: Documents retrieved: {documents}")
     return documents
-
-def extract_llm(documents, llm, command):   
-    context = "\n".join([doc.page_content for doc in documents])
-    myprompt = f"Given the context:\n{context}\n Perform command: {command} for records from context"
-    response = llm.generate(prompts=[myprompt])
-    logging.info(f"{uuid_string}: llm generation: {response}")
-    return response
-
-def agent_llm():
-    DIAL_API_KEY = os.environ["DIAL_API_KEY"]
-    llm = AzureChatOpenAI(
-        api_version="2024-10-21",
-        azure_endpoint="https://ai-proxy.lab.epam.com",
-        api_key=DIAL_API_KEY,
-        model="gpt-4o")
-    prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", "You are a movie advisor, you answer questions about movies."),
-        ("system", "If you don't know an answer, invoke the TMDB-API with a question in natural language."),
-        ("human", "{query}"),
-        ("placeholder", "{agent_scratchpad}"),
-    ])
-    tmdb_bearer_token = os.getenv("TMDB_BEARER_TOKEN")
-    tools = load_tools(["tmdb-api"], llm=llm, tmdb_bearer_token=tmdb_bearer_token)
-    agent = create_tool_calling_agent(llm, tools, prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-    result = agent_executor.invoke(
-    {
-        "query": "Give me the plot of movie 'Inception'?",
-    })
-    return result
 
 
 def decorate_documents_with_relations(documents):
@@ -96,13 +57,55 @@ def decorate_documents_with_relations(documents):
             logging.info(f"{uuid_string}: {len(metadatas)} documents found.")
             doc.page_content = doc.page_content + str(relevant_documents['documents'])
             for metadata in metadatas:
-                print(metadata)
                 if 'title' in metadata:
                     logging.info(f"{uuid_string}: searching for title entries: {metadata['title']}")
                     relevant_docs_title = vectordb.get(where={"title": metadata['title']})
                     logging.info(f"{uuid_string}: {len(relevant_docs_title)} documents found by title.")
                     doc.page_content = doc.page_content + str(relevant_docs_title)
+
+def extract_llm(documents, command):   
+    #TODO: will work when movie_details_agent will work
+    context = "\n".join([doc.page_content for doc in documents])
+    myprompt = f"Given the context:\n{context}\n Perform command: {command} for records from context"
+    COHERE_API_KEY = os.environ["COHERE_API_KEY"]
+    llm=Cohere(model='command',cohere_api_key=COHERE_API_KEY)
+    response = llm.generate(prompts=[myprompt])
+    logging.info(f"{uuid_string}: llm generation: {response}")
+    return response
+
+def movie_details_agent(documents, command):    
+    DIAL_API_KEY = os.environ["DIAL_API_KEY"]
+    model = AzureChatOpenAI(
+        api_version="2024-10-21",
+        azure_endpoint="https://ai-proxy.lab.epam.com",
+        api_key=DIAL_API_KEY,
+        model="gpt-4o")
+    tmdb_bearer_token = os.environ["TMDB_API_KEY"]
+    tools = load_tools(["tmdb-api"], llm=model, tmdb_bearer_token=tmdb_bearer_token)
+    context = "\n".join([doc.page_content for doc in documents])
+    myprompt = f"""You are a movie advisor, you answer questions about movies. 
+                                     Given the context as list of documents:\n{context}\n, check if there is enough information to perform a command: {command} for records from context
+                                     If you don't know an answer, invoke the TMDB-API with a question in natural language.
+                                     If the command contains movie vote or movie mark, always invoke TMDB-API for this field.
+                                     Return with same context and add results to the end of each document
+                                     """
+    memory = MemorySaver()
+    agent_executor  = create_react_agent(
+        model,
+        tools)
     
+    input_message = {
+        "role": "user",
+        "content": myprompt,
+    }
+    
+    for step in agent_executor.stream(
+        {"messages": [myprompt]}, stream_mode="values"
+    ):
+        step["messages"][-1].pretty_print()
+
+    # TODO not working, documents are not retrieved
+    return step["messages"]
 #####################################################################
 # Extract top 5 titles matching the query
 
