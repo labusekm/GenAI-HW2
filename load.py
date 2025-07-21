@@ -37,6 +37,7 @@ def load_amazon(vector_store):
     transformed = data.apply(lambda x: { 
         "page_content": json.dumps(x.to_dict()), 
         "metadata": {
+            "title": x["title"],
             "type": x["type"],            
             "age": int(x["rating"].replace("+", "") if isinstance(x["rating"], str) else x["rating"]),
             "amazon":1
@@ -59,6 +60,7 @@ def load_amazon2(vector_store):
     transformed = data.apply(lambda x: { 
         "page_content": json.dumps(x.to_dict()), 
         "metadata": {
+            "title": x["title"],
             "type": x["type"],            
             "age": int(x["rating"].replace("+", "") if isinstance(x["rating"], str) else x["rating"]),
             "amazon":1
@@ -80,6 +82,7 @@ def load_disney(vector_store):
     transformed = data.apply(lambda x: { 
         "page_content": json.dumps(x.to_dict()), 
         "metadata": {
+            "title": x["movie_title"],
             "type": 'Movie',
             "disney":1
         }
@@ -99,6 +102,7 @@ def load_disney_plus(vector_store):
     transformed = data.apply(lambda x: { 
         "page_content": json.dumps(x.to_dict()), 
         "metadata": {
+            "title": x["title"],
             "type": x["type"],
             "disney":1
         }
@@ -118,6 +122,7 @@ def load_MoviesOnStreamingPlatforms(vector_store):
     transformed = data.apply(lambda x: { 
         "page_content": json.dumps(x.to_dict()), 
         "metadata": {
+            "title": x["Title"],
             "type": 'Movie',
             "age": int(x["Age"].replace("+", "") if isinstance(x["Age"], str) else x["Age"]),       
             "netflix": x["Netflix"],     
@@ -141,6 +146,7 @@ def load_MoviesOnStreamingPlatforms2(vector_store):
     transformed = data.apply(lambda x: { 
         "page_content": json.dumps(x.to_dict()), 
         "metadata": {
+            "title": x["Title"],
             "type": 'Movie',
             "age": int(x["Age"].replace("+", "") if isinstance(x["Age"], str) else x["Age"]),       
             "netflix": x["Netflix"],     
