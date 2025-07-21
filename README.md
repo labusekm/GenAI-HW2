@@ -18,17 +18,16 @@ Solution uses RAG to retrieve specific and precise data and avoid halucination w
 
 RAG data are retrieved using "Retriever". Retriever is also responsible for decoration of documents with relevant documents, based on "title" and "imdb_id" fields in metadata (if existing). This functionality is not required to be executed using LLM - it saves cost of LLM and enhances security as agents do only what is required
 
-React agent reads this data and checks what is missing in RAG. Missing data are requested using tool (tmdb tool) which calls tmdb API. tmdb API is always requested for newest vote of  amovie, to retrieve up to date data.
-Note: this functionality is still in development
+React agent reads this data and checks what is missing in RAG. Missing data are requested using tool (tmdb tool) which calls tmdb API. tmdb API is always requested for newest vote of a movie, to retrieve up to date data.
 
 All the result is provided to "extract agent" to generate content from all the data available.
 
 The following decisions were made in application design
 - modularity - task based agents and other tasks can be implemented without LLMs - it saves cost, enhances maintainability and security of LLM usage
-- each embedding chunk is wole record from input data - it's enough for good quality and cost effective solution (solution is still efficient when invoking llm with param: max_tokens=50)
+- each embedding chunk is whole record from input data - it's enough for good quality and cost effective solution (solution is still efficient when invoking llm with param: max_tokens=50)
 - added title, type, age and platform availability into metadata to improve the speed of data filtering
 - used HuggingFace embedding as recommended fine-tuned solution
-- Cohere "command" model is recommended for RAG-oriented tasks, Gpt-4o for image processing and agents - more powerful moel
+- Cohere "command" model is recommended for RAG-oriented tasks, Gpt-4o for image processing and agents - more powerful model
 - used search_kwargs parameter for efficient data filtering (eq. prefiltering of movies recommended for specific age of user)
 
 
