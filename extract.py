@@ -80,7 +80,6 @@ def exclude_duplicate_document_used_for_search(relevant_documents, index_to_excl
     return filtered_documents
 
 def extract_llm(documents, command):   
-    #TODO: will work when movie_details_agent will work
     context = "\n".join([doc for doc in documents])
     myprompt = f"Given the context:\n{context}\n Perform command: {command} for records from context"
     logging.info(f"{uuid_string}: prompt: {myprompt}")
